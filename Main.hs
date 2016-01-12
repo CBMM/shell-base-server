@@ -12,6 +12,14 @@ import System.Process
 -- | List of shell commands available to the server
 --   When a user tries to execute a command, the server
 --   will make sure the command is in this list
+--
+--   NOTE: It's very important that we restrict what commands the user
+--         could call! At the point of giving users shell access,
+--         the application is only as safe as the shell commands
+--         we're calling. We don't want to let the user have access
+--         to a compiler, for example: they could write a program that
+--         deletes the hard drive or steals other users' data on the
+--         server.
 cmds :: [ByteString]
 cmds = ["doubleit", "cowsay"]
 
