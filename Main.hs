@@ -9,15 +9,22 @@ import Snap.Http.Server
 import Snap.Util.FileServe
 import System.Process
 
+-- | List of shell commands available to the server
+--   When a user tries to execute a command, the server
+--   will make sure the command is in this list
 cmds :: [ByteString]
 cmds = ["doubleit", "cowsay"]
 
+-- | Main function chooses between serving static assets
+--   and handling command requests
 main :: IO ()
 main = quickHttpServe
        (serveDirectory "static"
         <|>
         route [("/:cmd/:arg", serveCommand cmds)])
 
+-- | This handler extracts the command name and argument string
+--   from the request, runs it, and responds with the command's output
 serveCommand :: [ByteString] -> Snap ()
 serveCommand okCmds = do
   cmd <- getParam "cmd"
