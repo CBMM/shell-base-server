@@ -1,14 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Control.Applicative
+import Control.Applicative    ((<|>))
 import Control.Monad.IO.Class (liftIO)
-import Data.ByteString.Char8 (ByteString, append, pack, unpack)
-import Data.Maybe
-import Snap
-import Snap.Http.Server
-import Snap.Util.FileServe
-import System.Process
+import Data.ByteString.Char8  (ByteString, pack, unpack)
+import Data.Maybe             (maybeToList)
+import Data.Monoid            ((<>), mempty)
+import Snap                   (Snap, getParam, route, writeBS)
+import Snap.Http.Server       (commandLineConfig, httpServe)
+import Snap.Util.FileServe    (serveDirectory)
+import System.Process         (readProcess)
 
+------------------------------------------------------------------------------
 -- | List of shell commands available to the server
 --   When a user tries to execute a command, the server
 --   will make sure the command is in this list
@@ -23,14 +25,19 @@ import System.Process
 cmds :: [ByteString]
 cmds = ["doubleit", "cowsay"]
 
+
+------------------------------------------------------------------------------
 -- | Main function chooses between serving static assets
 --   and handling command requests
 main :: IO ()
-main = quickHttpServe
+main = do
+  cfg <- commandLineConfig mempty
+  httpServe cfg
        (serveDirectory "static"
         <|>
         route [("/:cmd/:arg", serveCommand cmds)])
 
+------------------------------------------------------------------------------
 -- | This handler extracts the command name and argument string
 --   from the request, runs it, and responds with the command's output
 serveCommand :: [ByteString] -> Snap ()
@@ -41,7 +48,7 @@ serveCommand okCmds = do
     Nothing -> writeBS "No command"
     Just c
       | c `notElem` okCmds ->
-        writeBS (append c " is not an ok command")
+        writeBS (c <> " is not an ok command")
       | otherwise -> do
           retString <- liftIO (readProcess (unpack c) (map unpack arg) "")
           writeBS (pack retString)
